@@ -1,0 +1,13 @@
+@model OtpViewModel
+@{ ViewBag.Title = "Verified!"; }
+
+<div class="otp-card success-card">
+    <div class="checkmark-circle"><span class="checkmark">&#10003;</span></div>
+    <h2 class="card-title">Verified Successfully!</h2>
+    <p class="card-subtitle">
+        Your email <strong>@Model.Email</strong> has been verified.<br/>You're all set!
+    </p>
+    <a href="/Otp/Send" class="btn-primary" style="display:inline-flex;margin-top:20px;text-decoration:none;">
+        Start Over
+    </a>
+</div>

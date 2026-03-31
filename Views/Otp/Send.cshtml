@@ -1,0 +1,31 @@
+@model OtpViewModel
+@{ ViewBag.Title = "Send OTP"; }
+
+<div class="otp-card">
+    <div class="card-icon">&#9993;</div>
+    <h2 class="card-title">Email Verification</h2>
+    <p class="card-subtitle">Enter your email and we'll send a one-time password</p>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-error")">
+            <span>@(Model.IsSuccess ? "✓" : "✕")</span> @Model.Message
+        </div>
+    }
+
+    <form method="post" asp-action="Send">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-wrapper">
+                <span class="input-icon">&#64;</span>
+                <input asp-for="Email" class="form-input" type="email"
+                       placeholder="you@example.com" required autocomplete="email" />
+            </div>
+        </div>
+        <button type="submit" class="btn-primary">
+            <span>Send OTP</span> <span>&#8594;</span>
+        </button>
+    </form>
+    <p class="help-text">OTP valid for 5 minutes &bull; Max 3 attempts</p>
+</div>

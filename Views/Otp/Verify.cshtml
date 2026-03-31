@@ -1,0 +1,108 @@
+@model OtpViewModel
+@{ ViewBag.Title = "Verify OTP"; }
+
+<div class="otp-card">
+    <div class="card-icon">&#128274;</div>
+    <h2 class="card-title">Enter Your OTP</h2>
+    <p class="card-subtitle">
+        We sent a 6-digit code to <strong>@Model.Email</strong>.<br/>
+        Check your inbox (and spam folder).
+    </p>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-error")">
+            <span>@(Model.IsSuccess ? "✓" : "✕")</span> @Model.Message
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error"><span>✕</span> @TempData["Error"]</div>
+    }
+
+    <form method="post" asp-action="Verify">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Email" />
+
+        <div class="form-group">
+            <label class="form-label">6-Digit OTP Code</label>
+            <div class="otp-inputs">
+                <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" />
+                <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" />
+                <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" />
+                <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" />
+                <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" />
+                <input class="otp-digit" type="text" maxlength="1" inputmode="numeric" />
+            </div>
+            <input type="hidden" asp-for="EnteredOtp" id="EnteredOtp" />
+        </div>
+
+        <div class="timer-bar">
+            <span>Time remaining:</span>
+            <span id="timer" class="timer-value">5:00</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+        <button type="submit" class="btn-primary" id="verifyBtn">
+            <span>Verify OTP</span> <span>&#10003;</span>
+        </button>
+    </form>
+
+    <form method="post" asp-action="Resend">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn-ghost" id="resendBtn" disabled>
+            Resend OTP <span id="cooldown">(wait 30s)</span>
+        </button>
+    </form>
+
+    <a href="/Otp/Send" class="back-link">&#8592; Use a different email</a>
+</div>
+
+@section Scripts {
+<script>
+    const digits = document.querySelectorAll('.otp-digit');
+    const hidden = document.getElementById('EnteredOtp');
+
+    digits.forEach((el, i) => {
+        el.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value && i < 5) digits[i + 1].focus();
+            hidden.value = [...digits].map(d => d.value).join('');
+        });
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Backspace' && !this.value && i > 0) digits[i - 1].focus();
+        });
+        el.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const p = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+            [...p.slice(0, 6)].forEach((ch, j) => { if (digits[j]) digits[j].value = ch; });
+            hidden.value = [...digits].map(d => d.value).join('');
+            digits[Math.min(p.length, 5)].focus();
+        });
+    });
+
+    let secs = 300;
+    const timerEl = document.getElementById('timer');
+    const fillEl  = document.getElementById('progressFill');
+    const tick = setInterval(() => {
+        secs--;
+        const m = Math.floor(secs / 60), s = secs % 60;
+        timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        fillEl.style.width = (secs / 300 * 100) + '%';
+        if (secs <= 60) timerEl.style.color = '#e94560';
+        if (secs <= 0) { clearInterval(tick); timerEl.textContent = 'Expired';
+                         document.getElementById('verifyBtn').disabled = true; }
+    }, 1000);
+
+    let cd = 30;
+    const resendBtn = document.getElementById('resendBtn');
+    const cdEl = document.getElementById('cooldown');
+    const cdTick = setInterval(() => {
+        cd--;
+        cdEl.textContent = cd > 0 ? `(wait ${cd}s)` : '';
+        if (cd <= 0) { clearInterval(cdTick); resendBtn.disabled = false; }
+    }, 1000);
+
+    digits[0].focus();
+</script>
+}
